@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApplication.Models;
+using WebApplication.Services;
 
 namespace WebApplication.Controllers;
 
@@ -7,25 +8,39 @@ namespace WebApplication.Controllers;
 [ApiController]
 public class AnimalController : ControllerBase
 {
-    private static readonly List<Animal> _animals = new()
+    private IAnimalService _animalsService;
+
+    public AnimalController(IAnimalService animalsService)
     {
-        new Animal(1, "Puszek", "Kot", 1500, "czarny"),
-        new Animal(2, "Reksio", "Pies", 500, "szary"),
-        new Animal(3, "Filemon", "Kot", 200, "bialy"),
-        new Animal(4, "Kajtek", "Pies", 4500, "brazowy"),
-        new Animal(5, "Koko", "Malpa", 5000, "czarny"),
-    };
+        _animalsService = animalsService;
+    }
 
     [HttpGet]
-    public IActionResult getAnimals()
+    public IActionResult getAnimals(string orderBy = "name")
     {
-        return Ok(_animals);
+        var animals = _animalsService.GetAnimals();
+        switch (orderBy.ToLower())
+        {
+            case "description":
+                animals = animals.OrderBy(a => a.Description);
+                break;
+            case "category":
+                animals = animals.OrderBy(a => a.Category);
+                break;
+            case "area":
+                animals = animals.OrderBy(a => a.Area);
+                break;
+            default:
+                animals = animals.OrderBy(a => a.Name);
+                break;
+        }
+        return Ok(animals);
     }
 
     [HttpGet("{id:int}")]
     public IActionResult getAnimal(int id)
     {
-        var animal = _animals.FirstOrDefault(an => an.Id == id);
+        var animal = _animalsService.GetAnimal(id);
         if (animal == null)
         {
             return NotFound($"Animal with id {id} was not found");
@@ -36,20 +51,14 @@ public class AnimalController : ControllerBase
     [HttpPost]
     public IActionResult createAnimal(Animal animal)
     {
-        _animals.Add(animal);
+        var affectedCount = _animalsService.CreateAnimal(animal);
         return StatusCode(StatusCodes.Status201Created);
     }
     
     [HttpPut("{id:int}")]
     public IActionResult updateAnimal(int id, Animal animal)
     {
-        var animalToEdit = _animals.FirstOrDefault(an => an.Id == id);
-        if (animalToEdit == null)
-        {
-            return NotFound($"Animal with id {id} was not found");
-        }
-        _animals.Remove(animalToEdit);
-        _animals.Add(animal);
+        var affectedCount = _animalsService.UpdateAnimal(animal);
         return NoContent();
     }
     
@@ -57,14 +66,8 @@ public class AnimalController : ControllerBase
     [HttpDelete("{id:int}")]
     public IActionResult deleteAnimal(int id)
     {
-        var toDelete = _animals.FirstOrDefault(an => an.Id == id);
-        if (toDelete == null)
-        {
-            return NotFound($"Animal with id {id} was not found");
-        }
-
-        _animals.Remove(toDelete);
-        
+        var affectedCount = _animalsService.DeleteAnimal(id);
         return NoContent();
     }
 }
+

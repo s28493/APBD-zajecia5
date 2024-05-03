@@ -1,3 +1,6 @@
+using WebApplication.Repositories;
+using WebApplication.Services;
+
 public class Program
 {
     public static void Main(string[] args)
@@ -7,6 +10,8 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddControllers();
+        builder.Services.AddScoped<IAnimalRepository, AnimalRepository> ();
+        builder.Services.AddScoped<IAnimalService, AnimalService> ();
 
         var app = builder.Build();
 
